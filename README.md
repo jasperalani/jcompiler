@@ -1,90 +1,111 @@
-# Go Redis API Caching Service
+# jcompiler
+#### Code Execution Service
 
-This project demonstrates a simple API built with Golang that uses Redis to cache request/response pairs. Identical requests will be served from the cache instead of being reprocessed.
+A microservice-based system designed to execute code snippets in various programming languages. This service orchestrates code execution requests, handles caching of results, and forwards requests to language-specific runners.
 
-## Features
+## Overview
 
-- Go API with JSON request/response
-- Redis caching of requests
-- Docker and Docker Compose setup
-- Cache expiration (1 hour by default)
-- Health check endpoint
+The Code Execution Service consists of an orchestrator and multiple language-specific runners that allow users to execute code in various programming languages:
 
-## Project Structure
+- Go
+- JavaScript
+- TypeScript
+- Python
 
-```
-go-redis-api/
-├── main.go           # Main application code
-├── Dockerfile        # Docker image definition
-├── docker-compose.yml # Docker Compose configuration
-├── go.mod            # Go module file
-└── README.md         # This file
-```
+The service is built to be reliable, scalable, and efficient by implementing caching to avoid redundant code executions.
 
-## How It Works
+## Architecture
 
-1. The API receives a JSON request (e.g., `{"req":"Hello World!"}`)
-2. It checks if this exact request is already cached in Redis
-3. If found in cache, it returns the cached response
-4. If not found, it processes the request, caches the result, and returns the response
+The system uses a microservices architecture with the following components:
+
+1. **Orchestrator Service**: Main entry point that receives code execution requests, validates them, checks the cache, and forwards requests to the appropriate runner.
+
+2. **Language-Specific Runners**:
+    - Go Runner (`golang-runner:8001`)
+    - JavaScript Runner (`JavaScript-runner:8002`)
+    - TypeScript Runner (`typescript-runner:8003`)
+    - Python Runner (`python-runner:8004`)
+
+3. **Redis Cache**: Stores execution results to avoid redundant processing of identical code.
 
 ## API Endpoints
 
-- `POST /api/process` - Main endpoint that processes requests and handles caching
-- `GET /health` - Health check endpoint
+### Orchestrator Service
 
-## Request/Response Format
+#### POST `/api/process`
 
-**Request:**
+Processes a code execution request.
+
+**Request Body**:
 ```json
 {
-  "req": "Hello World!"
+  "code": "console.log('Hello, World!');",
+  "timeout": 10,
+  "language": "js",
+  "args": ["arg1", "arg2"],
+  "env": {
+    "ENV_VAR1": "value1",
+    "ENV_VAR2": "value2"
+  }
 }
 ```
 
-**Response:**
+**Parameters**:
+- `code` (string, required): The code to execute
+- `timeout` (integer, optional): Execution timeout in seconds (defaults to 10s or value in RUNNER_TIMEOUT env var)
+- `language` (string, required): Programming language ("go", "js", "ts", "python")
+- `args` (array, optional): Command-line arguments to pass to the program
+- `env` (object, optional): Environment variables for the execution environment
+
+**Response**:
 ```json
 {
-  "message": "Processed: Hello World!",
-  "timestamp": "2025-02-27T15:04:05Z",
-  "cached": false
+  "stdout": "Hello, World!",
+  "stderr": "",
+  "exitCode": 0,
+  "executionTime": 35,
+  "error": ""
 }
 ```
 
-The `cached` field will be `false` for newly processed requests and `true` for responses served from cache.
+#### GET `/health`
 
-## Running the Application
+Health check endpoint.
 
-### Prerequisites
-
-- Docker and Docker Compose installed
-
-### Starting the Service
-
-```bash
-docker compose up --build --watch
-```
-
-### Testing the API
-
-```bash
-# First request (will be processed)
-curl -X POST -H "Content-Type: application/json" -d '{"req":"Hello World!"}' http://localhost:8080/api/process
-
-# Second identical request (will be served from cache)
-curl -X POST -H "Content-Type: application/json" -d '{"req":"Hello World!"}' http://localhost:8080/api/process
-```
-
-### Stopping the Service
-
-```bash
-docker-compose down
-```
+**Response**: "OK" with status 200 if the service is running properly.
 
 ## Configuration
 
-You can modify these settings in the code:
+The service can be configured using environment variables:
 
-- Cache expiration time (currently set to 1 hour)
-- Redis connection parameters
-- Port number (currently 8080)
+- `MAX_REQUEST_SIZE`: Maximum size of request body in bytes (default: 102400, or 100KB)
+- `RUNNER_TIMEOUT`: Default timeout for code execution in seconds (default: 10)
+
+## Caching Behavior
+
+The service caches execution results with the following behavior:
+
+- Cache key: A string representation of the entire JSON request
+- Cache duration: 1 hour
+- Cache storage: Redis database
+
+## Running the Service
+
+### Prerequisites
+
+- Docker and Docker Compose
+
+### Deployment
+
+1. Build and start the services using Docker Compose:
+   ```
+   docker-compose up --build --watch
+   ```
+
+2. The orchestrator service will be available at `http://localhost:8000`
+
+## Development Notes
+
+- The service uses the gorilla/mux router for HTTP routing
+- Redis is used as a caching layer to improve performance
+- All services use structured logging for better observability
