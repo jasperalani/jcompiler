@@ -1,4 +1,4 @@
-module github.com/jasperalani/jcompiler
+module main
 
 go 1.19
 

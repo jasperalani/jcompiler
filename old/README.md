@@ -62,7 +62,7 @@ The `cached` field will be `false` for newly processed requests and `true` for r
 ### Starting the Service
 
 ```bash
-docker compose up --build --watch
+docker-compose up -d
 ```
 
 ### Testing the API

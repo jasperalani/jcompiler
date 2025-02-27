@@ -1,10 +1,9 @@
-package jcompiler
+package main
 
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"time"
@@ -14,14 +13,16 @@ import (
 
 // Request represents the incoming request structure
 type Request struct {
-	Req string `json:"req"`
+	Code     string `json:"code"`
+	Language string `json:"language"`
 }
 
 // Response represents the outgoing response structure
 type Response struct {
-	Message   string `json:"message"`
+	Output    string `json:"output"`
 	Timestamp string `json:"timestamp"`
 	Cached    bool   `json:"cached"`
+	Error     string `json:"error"`
 }
 
 var (
@@ -57,7 +58,11 @@ func main() {
 
 func healthCheck(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("OK"))
+	_, err := w.Write([]byte("OK"))
+	if err != nil {
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
 }
 
 func handleRequest(w http.ResponseWriter, r *http.Request) {
@@ -67,7 +72,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Read request body
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "Error reading request body", http.StatusBadRequest)
 		return
@@ -113,18 +118,9 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 
 	// Return the response
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(responseJSON)
-}
-
-// processRequest simulates processing the request
-// In a real application, this could be a more complex operation
-func processRequest(req Request) Response {
-	// Simulate some processing time
-	time.Sleep(500 * time.Millisecond)
-
-	return Response{
-		Message:   fmt.Sprintf("Processed: %s", req.Req),
-		Timestamp: time.Now().Format(time.RFC3339),
-		Cached:    false,
+	_, err = w.Write(responseJSON)
+	if err != nil {
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
 	}
 }
