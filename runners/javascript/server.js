@@ -2,7 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const { VM, VMScript } = require('vm2');
 const app = express();
-const port = 8082;
+const port = 8002;
 
 // Parse JSON request bodies
 app.use(bodyParser.json({ limit: '100kb' }));
@@ -95,6 +95,8 @@ function executeJavaScript(code, timeout, args = [], env = {}) {
 			// Execute the code
 			const script = new VMScript(code);
 			vm.run(script);
+			
+			stdout = stdout.substring(0, stdout.length - 1);
 			
 			resolve({
 				stdout,

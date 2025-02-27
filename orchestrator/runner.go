@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 )
@@ -12,63 +11,65 @@ import (
 func forwardToRunner(req CodeRequest) (CodeResponse, error) {
 	// Map language to runner URL
 	runnerURLs := map[string]string{
-		"go":     "http://golang-runner:8081/run",
-		"js":     "http://javascript-runner:8082/run",
-		"ts":     "http://typescript-runner:8083/run",
-		"python": "http://python-runner:8084/run",
+		"go": "http://golang-runner:8001/run",
+		//"js":     "http://javascript-runner:8002/run",
+		"js":     "http://typescript-runner:8003/run",
+		"ts":     "http://typescript-runner:8003/run",
+		"python": "http://python-runner:8004/run",
 	}
 
 	runnerURL, ok := runnerURLs[req.Language]
 	if !ok {
-		return CodeResponse{Stdout: "1", Error: "unsupported language"}, fmt.Errorf("unsupported language: %s", req.Language)
+		err := fmt.Errorf("unsupported language: %s", req.Language)
+		log.Printf("Error: %v", err)
+		return CodeResponse{Error: "unsupported language"}, err
 	}
 
 	// Create HTTP client with timeout
 	client := &http.Client{}
 
-	var CodeObj Code
-	CodeObj.Code = req.Code
+	var codeObj Code
+	codeObj.Code = req.Code
 
 	// Marshal request to JSON
-	reqBody, err := json.Marshal(CodeObj)
+	reqBody, err := json.Marshal(codeObj)
 	if err != nil {
-		return CodeResponse{Stdout: "2", Error: err.Error()}, err
+		log.Printf("Error marshalling request: %v", err)
+		return CodeResponse{Error: err.Error()}, err
 	}
-
-	log.Print("code")
-	log.Print(string(reqBody))
 
 	// Create HTTP request
 	httpReq, err := http.NewRequest("POST", runnerURL, bytes.NewReader(reqBody))
 	if err != nil {
-		return CodeResponse{Stdout: "3", Error: err.Error()}, err
+		log.Printf("Error creating HTTP request: %v", err)
+		return CodeResponse{Error: err.Error()}, err
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Body = http.NoBody
 
 	// Send request
 	resp, err := client.Do(httpReq)
 	if err != nil {
-		return CodeResponse{Stdout: "4", Error: err.Error()}, err
+		log.Printf("Error sending request to runner: %v", err)
+		return CodeResponse{Error: err.Error()}, err
 	}
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			return
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("Error closing response body: %v", err)
 		}
-	}(resp.Body)
+	}()
 
-	log.Print(resp.Body)
+	// Handle error response status code
+	if resp.StatusCode != http.StatusOK {
+		err := fmt.Errorf("runner returned non-200 status: %d", resp.StatusCode)
+		log.Printf("Error: %v", err)
+		return CodeResponse{Error: fmt.Sprintf("runner error (status: %d)", resp.StatusCode)}, err
+	}
 
 	// Parse response
 	var result CodeResponse
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return CodeResponse{Stdout: "5", Error: err.Error()}, err
-	}
-
-	// Handle error response
-	if resp.StatusCode != http.StatusOK {
-		return result, fmt.Errorf("runner returned non-200 status: %d", resp.StatusCode)
+		log.Printf("Error decoding response: %v", err)
+		return CodeResponse{Error: err.Error()}, err
 	}
 
 	return result, nil

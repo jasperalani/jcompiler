@@ -4,31 +4,25 @@ services:
     build:
       context: ./orchestrator
       dockerfile: Dockerfile
-    volumes:
-      - ./orchestrator:/app
     ports:
       - "8000:8000"
     networks:
-      - runner_network
+      - api-network
     depends_on:
       - redis
-      - golang-runner
-      - javascript-runner
-      - typescript-runner
-      - python-runner
     environment:
-      - RUNNER_TIMEOUT=10
+      - RUNNER_TIMEOUT=20
       - MAX_REQUEST_SIZE=102400
       - REDIS_URL=redis:6379
     develop:
       watch:
         - action: rebuild
           path: orchestrator/
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 256M
+#    deploy:
+#      resources:
+#        limits:
+#          cpus: '0.5'
+#          memory: 256M
 
   redis:
     image: redis:alpine
@@ -37,74 +31,74 @@ services:
     volumes:
       - redis-data:/data
     networks:
-      - runner_network
+      - api-network
     restart: unless-stopped
 
-  # Go code runner service
-  golang-runner:
-    build:
-      context: ./runners/golang
-      dockerfile: Dockerfile
-    networks:
-      - runner_network
-    deploy:
-      resources:
-        limits:
-          cpus: '0.3'
-          memory: 200M
-    read_only: true
-    tmpfs:
-      - /tmp:rw,noexec,nosuid,size=50M
-    security_opt:
-      - no-new-privileges=true
-    cap_drop:
-      - ALL
-    environment:
-      - MAX_EXECUTION_TIME=5
-    develop:
-      watch:
-        - action: rebuild
-          path: runners/golang
+#  golang-runner:
+#    build:
+#      context: ./runners/golang
+#      dockerfile: Dockerfile
+#    ports:
+#      - "8001:8001"
+#    networks:
+#      - api-network
+#    deploy:
+#      resources:
+#        limits:
+#          cpus: '0.3'
+#          memory: 200M
+#    tmpfs:
+#      - /tmp:rw,noexec,nosuid,size=50M
+#    security_opt:
+#      - no-new-privileges=true
+#    cap_drop:
+#      - ALL
+#    environment:
+#      - MAX_EXECUTION_TIME=5
+#    develop:
+#      watch:
+#        - action: rebuild
+#          path: ./runners/golang
 
-  # JavaScript code runner service
-  javascript-runner:
-    build:
-      context: ./runners/javascript
-      dockerfile: Dockerfile
-    networks:
-      - runner_network
-    deploy:
-      resources:
-        limits:
-          cpus: '0.3'
-          memory: 200M
-    read_only: true
-    tmpfs:
-      - /tmp:rw,noexec,nosuid,size=50M
-    security_opt:
-      - no-new-privileges=true
-    cap_drop:
-      - ALL
-    environment:
-      - MAX_EXECUTION_TIME=5
-    develop:
-      watch:
-        - action: rebuild
-          path: runners/javascript
+#  javascript-runner:
+#    build:
+#      context: ./runners/javascript
+#      dockerfile: Dockerfile
+#    networks:
+#      - api-network
+#    ports:
+#      - "8002:8002"
+#    deploy:
+#      resources:
+#        limits:
+#          cpus: '0.3'
+#          memory: 200M
+#    tmpfs:
+#      - /tmp:rw,noexec,nosuid,size=50M
+#    security_opt:
+#      - no-new-privileges=true
+#    cap_drop:
+#      - ALL
+#    environment:
+#      - MAX_EXECUTION_TIME=5
+#    develop:
+#      watch:
+#        - action: rebuild
+#          path: ./runners/javascript
 
-  # TypeScript code runner service
   typescript-runner:
     build:
       context: ./runners/typescript
       dockerfile: Dockerfile
     networks:
-      - runner_network
+      - api-network
+    ports:
+      - "8003:8003"
     deploy:
       resources:
         limits:
           cpus: '0.3'
           memory: 200M
-    read_only: true
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=50M
     security_opt:
@@ -112,40 +106,41 @@ services:
     cap_drop:
       - ALL
     environment:
-      - MAX_EXECUTION_TIME=5
+      - MAX_EXECUTION_TIME=20
     develop:
       watch:
         - action: rebuild
-          path: runners/typescript
+          path: ./runners/typescript
 
-  # Python code runner service
-  python-runner:
-    build:
-      context: ./runners/python
-      dockerfile: Dockerfile
-    networks:
-      - runner_network
-    deploy:
-      resources:
-        limits:
-          cpus: '0.3'
-          memory: 200M
-    read_only: true
-    tmpfs:
-      - /tmp:rw,noexec,nosuid,size=50M
-    security_opt:
-      - no-new-privileges=true
-    cap_drop:
-      - ALL
-    environment:
-      - MAX_EXECUTION_TIME=5
-    develop:
-      watch:
-        - action: rebuild
-          path: runners/python
+#  python-runner:
+#    build:
+#      context: ./runners/python
+#      dockerfile: Dockerfile
+#    networks:
+#      - api-network
+#    ports:
+#      - "8004:8004"
+#    deploy:
+#      resources:
+#        limits:
+#          cpus: '0.3'
+#          memory: 200M
+#    tmpfs:
+#      - /tmp:rw,noexec,nosuid,size=50M
+#    security_opt:
+#      - no-new-privileges=true
+#    cap_drop:
+#      - ALL
+#    environment:
+#      - MAX_EXECUTION_TIME=5
+#    develop:
+#      watch:
+#        - action: rebuild
+#          path: ./runners/python
+
 
 networks:
-  runner_network:
+  api-network:
     driver: bridge
 
 volumes:

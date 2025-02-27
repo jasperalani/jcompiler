@@ -1,4 +1,4 @@
-FROM node:18-alpine
+FROM node:23-alpine
 
 WORKDIR /app
 
@@ -7,5 +7,9 @@ RUN npm install
 
 COPY . .
 
-EXPOSE 8083
+RUN npm cache clean --force
+RUN npm uninstall typescript tsc
+RUN npm install typescript
+
+EXPOSE 8003
 CMD ["node", "server.js"]

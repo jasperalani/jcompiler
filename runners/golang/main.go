@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -26,19 +27,21 @@ type CodeResponse struct {
 	Stderr        string `json:"stderr"`
 	ExitCode      int    `json:"exitCode"`
 	ExecutionTime int64  `json:"executionTime"`
-	Error         string `json:"error,omitempty"`
+	Error         string `json:"error"`
 }
 
 func main() {
 	http.HandleFunc("POST /run", handleRunCode)
 	http.HandleFunc("GET /health", handleHealth)
 
-	port := "8081"
+	port := "8001"
 	log.Printf("Starting Go runner service on port %s", port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
 
 func handleRunCode(w http.ResponseWriter, r *http.Request) {
+	log.Printf("Handling request for %s", r.URL.Path)
+
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -65,44 +68,15 @@ func handleRunCode(w http.ResponseWriter, r *http.Request) {
 func executeGoCode(req CodeRequest) (CodeResponse, error) {
 	start := time.Now()
 	response := CodeResponse{}
+	response.Error = ""
 
-	// Create temporary directory
-
-	var tmpDir = "tmp"
-
-	_, err := os.Stat(tmpDir)
+	// Create tmp dir, main.go and go.mod files and write code
+	mainFile, tmpDir, err := enqueueCode(req.Code)
 	if err != nil {
-		//tmpDir, err := os.MkdirTemp("./", "goexec")
-		err := os.Mkdir(tmpDir, 0644)
-		if err != nil {
-			return response, fmt.Errorf("failed to create temp directory: %v", err)
-		}
-		/*	defer func(path string) {
-			err := os.RemoveAll(path)
-			if err != nil {
-
-			}
-		}(tmpDir)*/
+		return CodeResponse{}, err
 	}
 
-	// Remove escaping from json
-	log.Print(req.Code)
-
-	// Create temporary file for the code
-	mainFile := filepath.Join(tmpDir, "main.go")
-	if err := os.WriteFile(mainFile, []byte(req.Code), 0644); err != nil {
-		return response, fmt.Errorf("failed to write code to file: %v", err)
-	}
-
-	// Create go.mod file
-	modFile := filepath.Join(tmpDir, "go.mod")
-	//modContent := "module runner\n\ngo 1.20\n"
-	modContent := "module main\n\ngo 1.20\n"
-	if err := os.WriteFile(modFile, []byte(modContent), 0644); err != nil {
-		return response, fmt.Errorf("failed to create go.mod: %v", err)
-	}
-
-	//exec.Command("gofmt", "-s", "-w", ".")
+	var executable = filepath.Join(tmpDir, "runner")
 
 	// Get max execution time from environment or use default
 	maxExecTime := 5
@@ -118,14 +92,9 @@ func executeGoCode(req CodeRequest) (CodeResponse, error) {
 	}
 
 	// Build the code
-	//bu := exec.Command("go", "build", "-o", filepath.Join(tmpDir, "runner"), mainFile)
-	//err = bu.Run()
-	//if err != nil {
-	//	return CodeResponse{}, err
-	//}
-	//buildCmd := exec.Command("go", "build", "-o", filepath.Join(tmpDir, "runner")+".exe", mainFile) // windows
-	buildCmd := exec.Command("go", "build", "-o", filepath.Join(tmpDir, "runner"), mainFile) // linux
-	//buildCmd.Dir = tmpDir
+	//buildCmd := exec.Command("go", "build", "-o", executable+".exe", mainFile) // windows
+	buildCmd := exec.Command("go", "build", "-o", executable, mainFile) // linux
+
 	var buildStderr bytes.Buffer
 	buildCmd.Stderr = &buildStderr
 	if err := buildCmd.Run(); err != nil {
@@ -136,9 +105,8 @@ func executeGoCode(req CodeRequest) (CodeResponse, error) {
 	}
 
 	// Run the compiled code
-	//runCmd := exec.Command(filepath.Join(tmpDir, "runner") + ".exe") // windows
-	runCmd := exec.Command("./" + filepath.Join(tmpDir, "runner")) // linux
-	//runCmd.Dir = tmpDir
+	//runCmd := exec.Command(executable + ".exe") // windows
+	runCmd := exec.Command("./" + executable) // linux
 
 	// Set custom environment variables if provided
 	if len(req.Env) > 0 {
@@ -194,7 +162,72 @@ func executeGoCode(req CodeRequest) (CodeResponse, error) {
 	response.Stderr = stderr.String()
 	response.ExecutionTime = time.Since(start).Milliseconds()
 
+	// Trim output string
+	var explode1 = strings.Split(response.Stderr, ":")
+	response.Stderr = explode1[2][3:]
+	response.Stderr = response.Stderr[:len(response.Stderr)-1]
+
+	response.Stdout = response.Stderr
+	response.Stderr = ""
+
 	return response, nil
+}
+
+func enqueueCode(code string) (string, string, error) {
+	dirName := "tmp"
+	err := os.Mkdir(dirName, 0777)
+	if err != nil {
+		if os.IsExist(err) {
+			//fmt.Printf("Directory '%s' already exists\n", dirName)
+		} else {
+			fmt.Printf("Error creating directory: %v\n", err)
+			return "", "", nil
+		}
+	} else {
+		fmt.Printf("Created directory '%s' with full permissions\n", dirName)
+	}
+
+	// Create file with full permissions (0666)
+	mainFileName := dirName + "/main.go"
+	mainFile, err := os.OpenFile(mainFileName, os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		fmt.Printf("Error creating file: %v\n", err)
+		return "", "", err
+	}
+	defer func(file *os.File) {
+		err := file.Close()
+		if err != nil {
+			fmt.Printf("Error closing file: %v\n", err)
+		}
+	}(mainFile)
+
+	_, err = mainFile.WriteString(code)
+	if err != nil {
+		fmt.Printf("Error writing to file: %v\n", err)
+		return "", "", err
+	}
+
+	// Create file with full permissions (0666)
+	modFileName := dirName + "/go.mod"
+	modFile, err := os.OpenFile(modFileName, os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		fmt.Printf("Error creating file: %v\n", err)
+		return "", "", err
+	}
+	defer func(file *os.File) {
+		err := file.Close()
+		if err != nil {
+			fmt.Printf("Error closing file: %v\n", err)
+		}
+	}(modFile)
+
+	_, err = modFile.WriteString("module main\n\ngo 1.20\n")
+	if err != nil {
+		fmt.Printf("Error writing to file: %v\n", err)
+		return "", "", err
+	}
+
+	return mainFileName, dirName, nil
 }
 
 func handleHealth(w http.ResponseWriter, _ *http.Request) {

@@ -6,7 +6,7 @@ const path = require('path');
 const { exec } = require('child_process');
 const os = require('os');
 const app = express();
-const port = 8083;
+const port = 8003;
 
 // Parse JSON request bodies
 app.use(bodyParser.json({ limit: '100kb' }));
@@ -46,19 +46,26 @@ function executeTypeScript(code, timeout, args = [], env = {}) {
 		// Get max execution time from environment or use default
 		const maxExecTime = process.env.MAX_EXECUTION_TIME
 		   ? parseInt(process.env.MAX_EXECUTION_TIME, 10)
-		   : 5;
+		   : 20;
 		
 		// Use the smaller of request timeout and max allowed timeout
-		const timeoutMs = Math.min(
-		   timeout ? timeout * 1000 : 5000,
-		   maxExecTime * 1000
-		);
+		//const timeoutMs = Math.min(
+		//   timeout ? timeout * 1000 : timeoutMs,
+		//   maxExecTime * 1000
+		//);
+		
+		const timeoutMs = maxExecTime * 1000
 		
 		try {
 			// Create temporary directory for TypeScript files
-			const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-exec-'));
+			//const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-exec-'));
+			const tmpDir = "/app/tmp"
 			const tsFilePath = path.join(tmpDir, 'script.ts');
 			const jsFilePath = path.join(tmpDir, 'script.js');
+			
+			if (!fs.existsSync(tmpDir)) {
+				fs.mkdirSync(tmpDir);
+			}
 			
 			// Write TypeScript code to file
 			fs.writeFileSync(tsFilePath, code);
@@ -66,7 +73,7 @@ function executeTypeScript(code, timeout, args = [], env = {}) {
 			// Transpile TypeScript to JavaScript
 			await new Promise((resolveCompile, rejectCompile) => {
 				const compileProcess = exec(`npx tsc ${tsFilePath} --target ES2020 --module commonjs --outDir ${tmpDir}`,
-				   { timeout: 5000 },
+				   { timeout: 30000 },
 				   (error, stdout, stderr) => {
 					   if (error) {
 						   rejectCompile({
@@ -129,6 +136,8 @@ function executeTypeScript(code, timeout, args = [], env = {}) {
 			
 			const script = new VMScript(jsCode);
 			vm.run(script);
+			
+			//stdout = stdout.substring(0, stdout.length - 1);
 			
 			// Clean up temporary directory
 			fs.rmSync(tmpDir, { recursive: true, force: true });
