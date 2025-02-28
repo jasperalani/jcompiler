@@ -29,83 +29,83 @@ services:
       - api-network
     restart: unless-stopped
 
-#  golang-runner:
-#    build:
-#      context: ./runners/golang
-#      dockerfile: Dockerfile
-#    ports:
-#      - "8001:8001"
-#    networks:
-#      - api-network
-#    deploy:
-#      resources:
-#        limits:
-#          cpus: '0.3'
-#          memory: 200M
-#    tmpfs:
-#      - /tmp:rw,noexec,nosuid,size=50M
-#    security_opt:
-#      - no-new-privileges=true
-#    cap_drop:
-#      - ALL
-#    environment:
-#      - MAX_EXECUTION_TIME=5
-#    develop:
-#      watch:
-#        - action: rebuild
-#          path: ./runners/golang
-#
-#  javascript-runner:
-#    build:
-#      context: ./runners/javascript
-#      dockerfile: Dockerfile
-#    networks:
-#      - api-network
-#    ports:
-#      - "8002:8002"
-#    deploy:
-#      resources:
-#        limits:
-#          cpus: '0.3'
-#          memory: 200M
-#    tmpfs:
-#      - /tmp:rw,noexec,nosuid,size=50M
-#    security_opt:
-#      - no-new-privileges=true
-#    cap_drop:
-#      - ALL
-#    environment:
-#      - MAX_EXECUTION_TIME=5
-#    develop:
-#      watch:
-#        - action: rebuild
-#          path: ./runners/javascript
-#
-#  typescript-runner:
-#    build:
-#      context: ./runners/typescript
-#      dockerfile: Dockerfile
-#    networks:
-#      - api-network
-#    ports:
-#      - "8003:8003"
-#    deploy:
-#      resources:
-#        limits:
-#          cpus: '0.3'
-#          memory: 200M
-#    tmpfs:
-#      - /tmp:rw,noexec,nosuid,size=50M
-#    security_opt:
-#      - no-new-privileges=true
-#    cap_drop:
-#      - ALL
-#    environment:
-#      - MAX_EXECUTION_TIME=20
-#    develop:
-#      watch:
-#        - action: rebuild
-#          path: ./runners/typescript
+ golang-runner:
+   build:
+     context: ./runners/golang
+     dockerfile: Dockerfile
+   ports:
+     - "8001:8001"
+   networks:
+     - api-network
+   deploy:
+     resources:
+       limits:
+         cpus: '0.3'
+         memory: 200M
+   tmpfs:
+     - /tmp:rw,noexec,nosuid,size=50M
+   security_opt:
+     - no-new-privileges=true
+   cap_drop:
+     - ALL
+   environment:
+     - MAX_EXECUTION_TIME=5
+   develop:
+     watch:
+       - action: rebuild
+         path: ./runners/golang
+
+ javascript-runner:
+   build:
+     context: ./runners/javascript
+     dockerfile: Dockerfile
+   networks:
+     - api-network
+   ports:
+     - "8002:8002"
+   deploy:
+     resources:
+       limits:
+         cpus: '0.3'
+         memory: 200M
+   tmpfs:
+     - /tmp:rw,noexec,nosuid,size=50M
+   security_opt:
+     - no-new-privileges=true
+   cap_drop:
+     - ALL
+   environment:
+     - MAX_EXECUTION_TIME=5
+   develop:
+     watch:
+       - action: rebuild
+         path: ./runners/javascript
+
+ typescript-runner:
+   build:
+     context: ./runners/typescript
+     dockerfile: Dockerfile
+   networks:
+     - api-network
+   ports:
+     - "8003:8003"
+   deploy:
+     resources:
+       limits:
+         cpus: '0.3'
+         memory: 200M
+   tmpfs:
+     - /tmp:rw,noexec,nosuid,size=50M
+   security_opt:
+     - no-new-privileges=true
+   cap_drop:
+     - ALL
+   environment:
+     - MAX_EXECUTION_TIME=20
+   develop:
+     watch:
+       - action: rebuild
+         path: ./runners/typescript
 
   python-runner:
     build:
