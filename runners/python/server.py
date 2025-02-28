@@ -1,9 +1,10 @@
 from flask import Flask, request, jsonify
 import os
 import sys
-import tempfile
 import time
 import traceback
+import concurrent.futures
+import tempfile
 import io
 import contextlib
 import signal
@@ -47,7 +48,8 @@ def run_code():
     # Use the smaller of request timeout and max allowed timeout
     timeout_seconds = min(timeout_seconds, max_exec_time)
 
-    result = execute_python_code(code, timeout_seconds, args, env_vars)
+    result = run_with_timeout(execute_python_code, args=(code, timeout_seconds, args, env_vars), timeout_seconds=timeout_seconds)
+    # result = execute_python_code(code, timeout_seconds, args, env_vars)
 
     # Add execution time
     result['executionTime'] = int((time.time() - start_time) * 1000)
@@ -63,6 +65,7 @@ def timeout_handler(signum, frame):
 
 def create_restricted_globals():
     """Create a restricted globals dictionary for RestrictedPython."""
+    # restricted_globals = dict(globals())
     restricted_globals = dict(safe_globals)
 
     # Add print function that writes to our stdout
@@ -84,14 +87,15 @@ def create_restricted_globals():
 
         return None
 
-    restricted_globals['print'] = _print
-    restricted_globals['_stdout'] = stdout
-    restricted_globals['_stderr'] = stderr
+    restricted_globals['print'] = _print # type: ignore
+    restricted_globals['_stdout'] = stdout # type: ignore
+    restricted_globals['_stderr'] = stderr # type: ignore
 
     return restricted_globals
 
 def execute_python_code(code, timeout_seconds, args, env_vars):
     """Execute Python code in a restricted environment."""
+    original_argv = ""
     stdout = ""
     stderr = ""
     exit_code = 0
@@ -110,16 +114,19 @@ def execute_python_code(code, timeout_seconds, args, env_vars):
         # Prepare stdout/stderr capture
         restricted_globals = create_restricted_globals()
 
+        # todo: new timeout system
         # Set up timeout
-        signal.signal(signal.SIGALRM, timeout_handler)
-        signal.alarm(timeout_seconds)
+        # signal.signal(signal.SIGALRM, timeout_handler)
+        # signal.alarm(timeout_seconds)
 
         try:
             # Compile the code with RestrictedPython
-            byte_code = compile_restricted(code, '<inline>', 'exec')
+            byte_code = compile(code, '<inline>', 'exec')
+            # byte_code = compile_restricted(code, '<inline>', 'exec')
 
             # Execute the code
             exec(byte_code, restricted_globals)
+            time.sleep(2)
 
             # Collect output
             stdout = ''.join(restricted_globals.get('_stdout', []))
@@ -135,15 +142,16 @@ def execute_python_code(code, timeout_seconds, args, env_vars):
             exit_code = 1
             error_msg = str(e)
 
-        finally:
-            # Cancel the alarm
-            signal.alarm(0)
-
     finally:
         # Restore environment and args
         os.environ.clear()
         os.environ.update(original_env)
         sys.argv = original_argv
+
+
+    # print(stdout)
+    if stdout[-2:] == "\n":
+        stdout = stdout[:-2]
 
     return {
         'stdout': stdout,
@@ -151,6 +159,16 @@ def execute_python_code(code, timeout_seconds, args, env_vars):
         'exitCode': exit_code,
         'error': error_msg
     }
+
+def run_with_timeout(func, args=(), kwargs=None, timeout_seconds=5):
+    if kwargs is None:
+        kwargs = {}
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+        future = executor.submit(func, *args, **kwargs)
+        try:
+            return future.result(timeout=timeout_seconds)
+        except concurrent.futures.TimeoutError:
+            raise TimeoutError(f"Execution timed out after {timeout_seconds} seconds")
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8004)

@@ -58,8 +58,8 @@ function executeTypeScript(code, timeout, args = [], env = {}) {
 		
 		try {
 			// Create temporary directory for TypeScript files
-			//const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-exec-'));
-			const tmpDir = "/app/tmp"
+			const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-exec-'));
+//			const tmpDir = "/app/tmp"
 			const tsFilePath = path.join(tmpDir, 'script.ts');
 			const jsFilePath = path.join(tmpDir, 'script.js');
 			
@@ -69,10 +69,12 @@ function executeTypeScript(code, timeout, args = [], env = {}) {
 			
 			// Write TypeScript code to file
 			fs.writeFileSync(tsFilePath, code);
-			
+
 			// Transpile TypeScript to JavaScript
 			await new Promise((resolveCompile, rejectCompile) => {
-				const compileProcess = exec(`npx tsc ${tsFilePath} --target ES2020 --module commonjs --outDir ${tmpDir}`,
+				// const compileProcess = exec(`npx tsc ${tsFilePath} --target ES2020 --module commonjs --outDir ${tmpDir}`
+				// esbuild is 100x faster than npx tsc
+				const compileProcess = exec(`esbuild ${tsFilePath} --format=cjs --outdir=${tmpDir}`,
 				   { timeout: 30000 },
 				   (error, stdout, stderr) => {
 					   if (error) {
@@ -137,7 +139,11 @@ function executeTypeScript(code, timeout, args = [], env = {}) {
 			const script = new VMScript(jsCode);
 			vm.run(script);
 			
-			//stdout = stdout.substring(0, stdout.length - 1);
+			// Remove newline character
+			let removeNewline = stdout.slice(-1);
+			if(removeNewline === "\n"){
+				stdout = stdout.substring(0, stdout.length - 1);
+			}
 			
 			// Clean up temporary directory
 			fs.rmSync(tmpDir, { recursive: true, force: true });

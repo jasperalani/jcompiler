@@ -12,8 +12,7 @@ func forwardToRunner(req CodeRequest) (CodeResponse, error) {
 	// Map language to runner URL
 	runnerURLs := map[string]string{
 		"go": "http://golang-runner:8001/run",
-		//"js":     "http://javascript-runner:8002/run",
-		"js":     "http://typescript-runner:8003/run",
+		"js":     "http://javascript-runner:8002/run",
 		"ts":     "http://typescript-runner:8003/run",
 		"python": "http://python-runner:8004/run",
 	}

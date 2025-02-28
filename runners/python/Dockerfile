@@ -8,4 +8,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 EXPOSE 8004
+# CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:8004", "app:app"]
 CMD ["python", "server.py"]

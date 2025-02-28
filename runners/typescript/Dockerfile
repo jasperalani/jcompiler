@@ -7,9 +7,7 @@ RUN npm install
 
 COPY . .
 
-RUN npm cache clean --force
-RUN npm uninstall typescript tsc
-RUN npm install typescript
+RUN npm install -g esbuild
 
 EXPOSE 8003
 CMD ["node", "server.js"]

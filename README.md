@@ -3,6 +3,21 @@
 
 A microservice-based system designed to execute code snippets in various programming languages. This service orchestrates code execution requests, handles caching of results, and forwards requests to language-specific runners.
 
+## Running the Service
+
+### Prerequisites
+
+- Docker and Docker Compose
+
+### Deployment
+
+1. Build and start the services using Docker Compose:
+   ```
+   docker-compose up --build --watch --remove-orphans
+   ```
+
+2. The orchestrator service will be available at `http://localhost:8000`
+
 ## Overview
 
 The Code Execution Service consists of an orchestrator and multiple language-specific runners that allow users to execute code in various programming languages:
@@ -89,23 +104,8 @@ The service caches execution results with the following behavior:
 - Cache duration: 1 hour
 - Cache storage: Redis database
 
-## Running the Service
-
-### Prerequisites
-
-- Docker and Docker Compose
-
-### Deployment
-
-1. Build and start the services using Docker Compose:
-   ```
-   docker-compose up --build --watch
-   ```
-
-2. The orchestrator service will be available at `http://localhost:8000`
-
 ## Development Notes
 
-- The service uses the gorilla/mux router for HTTP routing
+- The orchestrator service uses the gorilla/mux router for HTTP routing
 - Redis is used as a caching layer to improve performance
 - All services use structured logging for better observability

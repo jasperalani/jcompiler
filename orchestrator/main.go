@@ -140,7 +140,6 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
-
 		if err := json.NewEncoder(w).Encode(cachedResp); err != nil {
 			log.Printf("Error encoding cache response: %v", err)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -169,7 +168,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if response.Error != "" {
+	if response.Error == "" {
 		// Store in cache (expire after 1 hour)
 		if err := redisClient.Set(ctx, cacheKey, responseJSON, time.Hour).Err(); err != nil {
 			log.Printf("Failed to cache response: %v", err)

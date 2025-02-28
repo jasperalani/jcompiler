@@ -18,11 +18,6 @@ services:
       watch:
         - action: rebuild
           path: orchestrator/
-#    deploy:
-#      resources:
-#        limits:
-#          cpus: '0.5'
-#          memory: 256M
 
   redis:
     image: redis:alpine
@@ -59,7 +54,7 @@ services:
 #      watch:
 #        - action: rebuild
 #          path: ./runners/golang
-
+#
 #  javascript-runner:
 #    build:
 #      context: ./runners/javascript
@@ -85,41 +80,15 @@ services:
 #      watch:
 #        - action: rebuild
 #          path: ./runners/javascript
-
-  typescript-runner:
-    build:
-      context: ./runners/typescript
-      dockerfile: Dockerfile
-    networks:
-      - api-network
-    ports:
-      - "8003:8003"
-    deploy:
-      resources:
-        limits:
-          cpus: '0.3'
-          memory: 200M
-    tmpfs:
-      - /tmp:rw,noexec,nosuid,size=50M
-    security_opt:
-      - no-new-privileges=true
-    cap_drop:
-      - ALL
-    environment:
-      - MAX_EXECUTION_TIME=20
-    develop:
-      watch:
-        - action: rebuild
-          path: ./runners/typescript
-
-#  python-runner:
+#
+#  typescript-runner:
 #    build:
-#      context: ./runners/python
+#      context: ./runners/typescript
 #      dockerfile: Dockerfile
 #    networks:
 #      - api-network
 #    ports:
-#      - "8004:8004"
+#      - "8003:8003"
 #    deploy:
 #      resources:
 #        limits:
@@ -132,12 +101,37 @@ services:
 #    cap_drop:
 #      - ALL
 #    environment:
-#      - MAX_EXECUTION_TIME=5
+#      - MAX_EXECUTION_TIME=20
 #    develop:
 #      watch:
 #        - action: rebuild
-#          path: ./runners/python
+#          path: ./runners/typescript
 
+  python-runner:
+    build:
+      context: ./runners/python
+      dockerfile: Dockerfile
+    networks:
+      - api-network
+    ports:
+      - "8004:8004"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: 200M
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=50M
+    security_opt:
+      - no-new-privileges=true
+    cap_drop:
+      - ALL
+    environment:
+      - MAX_EXECUTION_TIME=5
+    develop:
+      watch:
+        - action: rebuild
+          path: ./runners/python
 
 networks:
   api-network:
