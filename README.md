@@ -1,7 +1,7 @@
 # jcompiler
 #### Code Execution Service
 
-A microservice-based system designed to execute code snippets in various programming languages. This service orchestrates code execution requests, handles caching of results, and forwards requests to language-specific runners.
+A microservice-based system designed to execute code snippets in various programming languages.
 
 ## Running the Service
 
