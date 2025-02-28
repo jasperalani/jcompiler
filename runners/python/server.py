@@ -150,8 +150,7 @@ def execute_python_code(code, timeout_seconds, args, env_vars):
 
 
     # print(stdout)
-    if stdout[-2:] == "\n":
-        stdout = stdout[:-2]
+    stdout = stdout.rstrip("\n")
 
     return {
         'stdout': stdout,
