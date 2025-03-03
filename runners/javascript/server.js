@@ -93,10 +93,11 @@ function executeJavaScript(code, timeout, args = [], env = {}) {
 			});
 			
 			// Execute the code
-			const script = new VMScript(code);
+			const script = new VMScript(atob(code));
 			vm.run(script);
 			
-			stdout = stdout.substring(0, stdout.length - 1);
+			// Remove newline
+			//stdout = stdout.substring(0, stdout.length - 1);
 			
 			resolve({
 				stdout,

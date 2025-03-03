@@ -29,7 +29,7 @@ services:
       - api-network
     restart: unless-stopped
 
- golang-runner:
+  golang-runner:
    build:
      context: ./runners/golang
      dockerfile: Dockerfile
@@ -55,7 +55,7 @@ services:
        - action: rebuild
          path: ./runners/golang
 
- javascript-runner:
+  javascript-runner:
    build:
      context: ./runners/javascript
      dockerfile: Dockerfile
@@ -81,7 +81,7 @@ services:
        - action: rebuild
          path: ./runners/javascript
 
- typescript-runner:
+  typescript-runner:
    build:
      context: ./runners/typescript
      dockerfile: Dockerfile

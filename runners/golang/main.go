@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -11,7 +12,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -69,6 +69,14 @@ func executeGoCode(req CodeRequest) (CodeResponse, error) {
 	start := time.Now()
 	response := CodeResponse{}
 	response.Error = ""
+
+	decodedBytes, err := base64.StdEncoding.DecodeString(req.Code)
+	if err != nil {
+		return CodeResponse{}, err
+	}
+
+	// Convert bytes to string and print
+	req.Code = string(decodedBytes)
 
 	// Create tmp dir, main.go and go.mod files and write code
 	mainFile, tmpDir, err := enqueueCode(req.Code)
@@ -163,12 +171,12 @@ func executeGoCode(req CodeRequest) (CodeResponse, error) {
 	response.ExecutionTime = time.Since(start).Milliseconds()
 
 	// Trim output string
-	var explode1 = strings.Split(response.Stderr, ":")
-	response.Stderr = explode1[2][3:]
-	response.Stderr = response.Stderr[:len(response.Stderr)-1]
-
-	response.Stdout = response.Stderr
-	response.Stderr = ""
+	//var explode1 = strings.Split(response.Stderr, ":")
+	//response.Stderr = explode1[2][3:]
+	//response.Stderr = response.Stderr[:len(response.Stderr)-1]
+	//
+	//response.Stdout = response.Stderr
+	//response.Stderr = ""
 
 	return response, nil
 }

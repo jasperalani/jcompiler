@@ -8,6 +8,7 @@ import tempfile
 import io
 import contextlib
 import signal
+import base64
 import RestrictedPython
 from RestrictedPython import compile_restricted
 from RestrictedPython import safe_globals
@@ -121,12 +122,12 @@ def execute_python_code(code, timeout_seconds, args, env_vars):
 
         try:
             # Compile the code with RestrictedPython
-            byte_code = compile(code, '<inline>', 'exec')
+            byte_code = compile(base64.b64decode(code), '<inline>', 'exec')
             # byte_code = compile_restricted(code, '<inline>', 'exec')
 
             # Execute the code
             exec(byte_code, restricted_globals)
-            time.sleep(2)
+#             time.sleep(2)
 
             # Collect output
             stdout = ''.join(restricted_globals.get('_stdout', []))
@@ -149,8 +150,8 @@ def execute_python_code(code, timeout_seconds, args, env_vars):
         sys.argv = original_argv
 
 
-    # print(stdout)
-    stdout = stdout.rstrip("\n")
+    # Remove newline
+    # stdout = stdout.rstrip("\n")
 
     return {
         'stdout': stdout,

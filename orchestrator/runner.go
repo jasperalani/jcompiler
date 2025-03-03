@@ -11,7 +11,7 @@ import (
 func forwardToRunner(req CodeRequest) (CodeResponse, error) {
 	// Map language to runner URL
 	runnerURLs := map[string]string{
-		"go": "http://golang-runner:8001/run",
+		"go":     "http://golang-runner:8001/run",
 		"js":     "http://javascript-runner:8002/run",
 		"ts":     "http://typescript-runner:8003/run",
 		"python": "http://python-runner:8004/run",
@@ -29,6 +29,9 @@ func forwardToRunner(req CodeRequest) (CodeResponse, error) {
 
 	var codeObj Code
 	codeObj.Code = req.Code
+
+	// Encode to base64
+	//codeObj.Code = base64.StdEncoding.EncodeToString([]byte(codeObj.Code))
 
 	// Marshal request to JSON
 	reqBody, err := json.Marshal(codeObj)

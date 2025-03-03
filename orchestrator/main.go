@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/go-redis/redis/v8"
-	_ "github.com/go-redis/redis/v8"
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
@@ -60,9 +60,20 @@ func main() {
 	r.HandleFunc("/api/process", handleRequest).Methods("POST")
 	r.HandleFunc("/health", healthCheck).Methods("GET")
 
+	corsMiddleware := handlers.CORS(
+		handlers.AllowedOrigins([]string{"*"}),
+		handlers.AllowedMethods([]string{"GET", "POST"}),
+		handlers.AllowedHeaders([]string{"Content-Type", "Authorization"}),
+		handlers.AllowedHeaders([]string{"Content-Type", "application/json"}),
+		//handlers.AllowCredentials(),
+	)
+
+	// Apply the CORS middleware to the router
+	corsRouter := corsMiddleware(r)
+
 	port := "8000"
 	log.Printf("Starting orchestrator service on port %s", port)
-	log.Fatal(http.ListenAndServe(":"+port, r))
+	log.Fatal(http.ListenAndServe(":"+port, corsRouter))
 }
 
 func healthCheck(w http.ResponseWriter, _ *http.Request) {
