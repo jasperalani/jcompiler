@@ -8,6 +8,16 @@ A microservice-based system designed to execute code snippets in various program
 ### Prerequisites
 
 - Docker and Docker Compose
+- Node/npm
+
+### Installation
+
+1. Install npm packages and build website:
+   ```
+   cd web
+   npm install
+   npm run build
+   ```
 
 ### Deployment
 
@@ -32,16 +42,21 @@ The service is built to be reliable, scalable, and efficient by implementing cac
 ## Architecture
 
 The system uses a microservices architecture with the following components:
+1. **Nginx Web Server**: Entry points `/` and `/api/process`
 
-1. **Orchestrator Service**: Main entry point that receives code execution requests, validates them, checks the cache, and forwards requests to the appropriate runner.
+2. **Vue Website**: Frontend entry point `/`
 
-2. **Language-Specific Runners**:
+3. **Orchestrator Service**: Backend entry point `/api/process` that receives code execution requests, validates them, checks the cache, and forwards requests to the appropriate runner.
+
+4. **Language-Specific Runners**:
     - Go Runner (`golang-runner:8001`)
     - JavaScript Runner (`JavaScript-runner:8002`)
     - TypeScript Runner (`typescript-runner:8003`)
     - Python Runner (`python-runner:8004`)
 
-3. **Redis Cache**: Stores execution results to avoid redundant processing of identical code.
+5. **Redis Cache**: Stores execution results to avoid redundant processing of identical code.
+
+![Architecture Diagam](./architecture-diagram.webp)
 
 ## API Endpoints
 
@@ -109,3 +124,8 @@ The service caches execution results with the following behavior:
 - The orchestrator service uses the gorilla/mux router for HTTP routing
 - Redis is used as a caching layer to improve performance
 - All services use structured logging for better observability
+
+
+## Todo
+
+- Add authentication to api requests
