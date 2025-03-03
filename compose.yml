@@ -14,10 +14,6 @@ services:
       - RUNNER_TIMEOUT=20
       - MAX_REQUEST_SIZE=102400
       - REDIS_URL=redis:6379
-    develop:
-      watch:
-        - action: rebuild
-          path: orchestrator/
 
   redis:
     image: redis:alpine
