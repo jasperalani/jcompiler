@@ -1,4 +1,12 @@
 services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./web:/usr/share/nginx/html
+    restart: unless-stopped
+
   # Main Go orchestration service
   orchestrator:
     build:
