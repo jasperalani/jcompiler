@@ -26,7 +26,9 @@ A microservice-based system designed to execute code snippets in various program
    docker-compose up --build --watch --remove-orphans
    ```
 
-2. The orchestrator service will be available at `http://localhost:8000`
+2. The vue website will be available at `http://localhost`
+
+3. The orchestrator service will be available at `http://localhost/api/process`
 
 ## Overview
 
