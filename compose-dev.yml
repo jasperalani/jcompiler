@@ -32,6 +32,10 @@ services:
       - RUNNER_TIMEOUT=20
       - MAX_REQUEST_SIZE=102400
       - REDIS_URL=redis:6379
+    develop:
+      watch:
+        - action: rebuild
+          path: orchestrator/
 
   redis:
     image: redis:alpine
@@ -65,6 +69,10 @@ services:
       - ALL
     environment:
       - MAX_EXECUTION_TIME=5
+    develop:
+      watch:
+        - action: rebuild
+          path: ./runners/golang
 
   javascript-runner:
     build:
@@ -87,6 +95,10 @@ services:
       - ALL
     environment:
       - MAX_EXECUTION_TIME=5
+    develop:
+      watch:
+        - action: rebuild
+          path: ./runners/javascript
 
   typescript-runner:
     build:
@@ -109,6 +121,10 @@ services:
       - ALL
     environment:
       - MAX_EXECUTION_TIME=20
+    develop:
+      watch:
+        - action: rebuild
+          path: ./runners/typescript
 
   python-runner:
     build:
@@ -131,6 +147,10 @@ services:
       - ALL
     environment:
       - MAX_EXECUTION_TIME=5
+    develop:
+      watch:
+        - action: rebuild
+          path: ./runners/python
 
 networks:
   api-network:
